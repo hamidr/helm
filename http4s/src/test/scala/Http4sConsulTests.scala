@@ -11,6 +11,7 @@ import org.scalactic.TypeCheckedTripleEquals
 import org.scalatest._
 import org.scalatest.matchers.{BeMatcher, MatchResult}
 import org.http4s.syntax.string.http4sStringSyntax
+
 import scala.reflect.ClassTag
 
 class Http4sConsulTests extends FlatSpec with Matchers with TypeCheckedTripleEquals {
@@ -235,8 +236,7 @@ object Http4sConsulTests {
   }
 
   def constantResponseClient(response: Response[IO]): Client[IO] = {
-    val dispResponse = DisposableResponse(response, IO.unit)
-    Client(Kleisli{req => IO.pure(dispResponse)}, IO.unit)
+    Client.fromHttpApp[IO](Kleisli{ _ => IO.pure(response) })
   }
 
   def body(s: String): EntityBody[IO] =

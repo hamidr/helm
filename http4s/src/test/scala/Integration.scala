@@ -2,8 +2,7 @@ package helm
 package http4s
 
 import scala.concurrent.duration.DurationInt
-
-import cats.effect.IO
+import cats.effect.{ContextShift, IO}
 import cats.implicits._
 import com.github.dockerjava.core.DefaultDockerClientConfig
 import com.github.dockerjava.netty.NettyDockerCmdExecFactory
@@ -62,7 +61,10 @@ class IntegrationSpec
     with BeforeAndAfterAll
     with DockerConsulService with DockerTestKit {
 
-  val client = Http1Client[IO]().unsafeRunSync
+  import scala.concurrent.ExecutionContext.Implicits.global
+  implicit val ioEff: ContextShift[IO] = IO.contextShift(global)
+
+  val client = BlazeClientBuilder[IO](global).stream.compile.toList.unsafeRunSync().head
 
   val baseUrl: Uri =
     Uri.fromString(s"http://${dockerHost}:${ConsulPort}").valueOr(throw _)

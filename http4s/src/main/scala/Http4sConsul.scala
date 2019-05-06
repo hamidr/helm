@@ -9,11 +9,9 @@ import cats.effect.Effect
 import cats.~>
 import cats.implicits._
 import journal.Logger
-import org.http4s.Method.PUT
 import org.http4s._
 import org.http4s.argonaut._
 import org.http4s.client._
-import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.headers.Authorization
 import org.http4s.Status.Successful
 import org.http4s.syntax.string.http4sStringSyntax
@@ -24,9 +22,6 @@ final class Http4sConsulClient[F[_]](
   accessToken: Option[String] = None,
   credentials: Option[(String,String)] = None)
   (implicit F: Effect[F]) extends (ConsulOp ~> F) {
-
-  private[this] val dsl = new Http4sClientDsl[F]{}
-  import dsl._
 
   private implicit val keysDecoder: EntityDecoder[F, List[String]] = jsonOf[F, List[String]]
   private implicit val listKvGetResultDecoder: EntityDecoder[F, List[KVGetResult]] = jsonOf[F, List[KVGetResult]]
@@ -60,11 +55,13 @@ final class Http4sConsulClient[F[_]](
       agentEnableMaintenanceMode(id, enable, reason)
   }
 
-  private def addConsulToken(req: Request[F]): Request[F] =
+  private def addConsulToken: Request[F] => Request[F] = req =>
     accessToken.fold(req)(tok => req.putHeaders(Header("X-Consul-Token", tok)))
 
-  private def addCreds(req: Request[F]): Request[F] =
+  private def addCreds: Request[F] => Request[F] = req =>
     credentials.fold(req){case (un,pw) => req.putHeaders(Authorization(BasicCredentials(un,pw)))}
+
+  private def enrichRequest: Request[F] => Request[F] = addConsulToken.andThen(addCreds)
 
   /** A nice place to store the Consul response headers so we can pass them around */
   private case class ConsulHeaders(
@@ -189,7 +186,7 @@ final class Http4sConsulClient[F[_]](
   def kvSet(key: Key, value: Array[Byte]): F[Unit] =
     for {
       _ <- F.delay(log.debug(s"setting consul key $key to $value"))
-      req <- PUT(uri = baseUri / "v1" / "kv" / key, value).map(addConsulToken).map(addCreds)
+      req = enrichRequest(Request[F](method = Method.PUT, uri = baseUri / "v1" / "kv" / key).withEntity(value))
       response <- client.expectOr[String](req)(handleConsulErrorResponse)
     } yield log.debug(s"setting consul key $key resulted in response $response")
 
@@ -342,13 +339,13 @@ final class Http4sConsulClient[F[_]](
 
     for {
       _ <- F.delay(log.debug(s"registering $service with json: ${json.toString}"))
-      req <- PUT(baseUri / "v1" / "agent" / "service" / "register", json).map(addConsulToken).map(addCreds)
+      req = enrichRequest(Request[F](method = Method.PUT, uri = baseUri / "v1" / "agent" / "service" / "register").withEntity(json))
       response <- client.expectOr[String](req)(handleConsulErrorResponse)
     } yield log.debug(s"registering service $service resulted in response $response")
   }
 
   def agentDeregisterService(id: String): F[Unit] = {
-    val req = addCreds(addConsulToken(Request(Method.PUT, uri = (baseUri / "v1" / "agent" / "service" / "deregister" / id))))
+    val req = enrichRequest(Request[F](Method.PUT, uri = (baseUri / "v1" / "agent" / "service" / "deregister" / id)))
     for {
       _ <- F.delay(log.debug(s"deregistering service with id $id"))
       response <- client.expectOr[String](req)(handleConsulErrorResponse)
