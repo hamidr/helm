@@ -1,7 +1,7 @@
 package helm
 
 import scala.collection.immutable.{Set => SSet}
-import argonaut.{DecodeJson, EncodeJson, StringWrap}, StringWrap.StringToParseWrap
+import io.circe._, io.circe.parser._
 import cats.data.NonEmptyList
 import cats.free.Free
 import cats.free.Free.liftF
@@ -104,15 +104,16 @@ object ConsulOp {
   ): ConsulOpF[QueryResponse[Option[Array[Byte]]]] =
     liftF(KVGetRaw(key, index, maxWait))
 
-  def kvGetJson[A:DecodeJson](
+  def kvGetJson[A](
     key:     Key,
     index:   Option[Long],
     maxWait: Option[Interval]
-  ): ConsulOpF[Either[Err, QueryResponse[Option[A]]]] =
+  )(implicit decoder: Decoder[A]): ConsulOpF[Either[Error, QueryResponse[Option[A]]]] =
     kvGetRaw(key, index, maxWait).map { response =>
       response.value match {
         case Some(bytes) =>
-          new String(bytes, "UTF-8").decodeEither[A].right.map(decoded => response.copy(value = Some(decoded)))
+          parse(new String(bytes, "UTF-8")).flatMap(decoder.decodeJson)
+            .right.map(decoded => response.copy(value = Option(decoded)))
         case None =>
           Right(response.copy(value = None))
       }
@@ -121,8 +122,8 @@ object ConsulOp {
   def kvSet(key: Key, value: Array[Byte]): ConsulOpF[Unit] =
     liftF(KVSet(key, value))
 
-  def kvSetJson[A](key: Key, value: A)(implicit A: EncodeJson[A]): ConsulOpF[Unit] =
-    kvSet(key, A.encode(value).toString.getBytes("UTF-8"))
+  def kvSetJson[A](key: Key, value: A)(implicit encoder: Encoder[A]): ConsulOpF[Unit] =
+    kvSet(key, encoder(value).toString.getBytes("UTF-8"))
 
   def kvDelete(key: Key): ConsulOpF[Unit] =
     liftF(KVDelete(key))

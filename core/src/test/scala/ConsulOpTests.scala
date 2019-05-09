@@ -1,6 +1,6 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
 import cats.effect.IO
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalactic.TypeCheckedTripleEquals
@@ -24,7 +24,7 @@ class ConsulOpTests extends FlatSpec with Matchers with TypeCheckedTripleEquals 
         case ConsulOp.KVGetRaw("foo", None, None) => IO.pure(QueryResponse(Some("42".getBytes), -1, true, -1))
       }
     } yield ()
-    interp.run(kvGetJson[Json]("foo", None, None)).unsafeRunSync should equal(Right(QueryResponse(Some(jNumber(42)), -1, true, -1)))
+    interp.run(kvGetJson[Json]("foo", None, None)).unsafeRunSync should equal(Right(QueryResponse(Some(Json.fromInt(42)), -1, true, -1)))
   }
 
   it should "return an error when get returns a non-decodeable value" in {
@@ -33,6 +33,6 @@ class ConsulOpTests extends FlatSpec with Matchers with TypeCheckedTripleEquals 
         case ConsulOp.KVGetRaw("foo", None, None) => IO.pure(QueryResponse(Some("{".getBytes), -1, true, -1))
       }
     } yield ()
-    interp.run(kvGetJson[Json]("foo", None, None)).unsafeRunSync should equal(Left("JSON terminates unexpectedly."))
+    interp.run(kvGetJson[Json]("foo", None, None)).unsafeRunSync.left.map(_.getMessage) should equal(Left("exhausted input"))
   }
 }

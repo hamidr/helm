@@ -1,6 +1,6 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
 
 /** Case class representing a health check as returned from an API call to Consul */
 final case class NodeResponse(
@@ -15,17 +15,17 @@ final case class NodeResponse(
 )
 
 object NodeResponse {
-  implicit def NodeResponseDecoder: DecodeJson[NodeResponse] =
-    DecodeJson(j =>
+  implicit def NodeResponseDecoder: Decoder[NodeResponse] =
+    Decoder.instance(c =>
       for {
-        id              <- (j --\ "ID").as[String]
-        node            <- (j --\ "Node").as[String]
-        address         <- (j --\ "Address").as[String]
-        datacenter      <- (j --\ "Datacenter").as[String]
-        meta            <- (j --\ "Meta").as[Map[String, String]]
-        taggedAddresses <- (j --\ "TaggedAddresses").as[TaggedAddresses]
-        createIndex     <- (j --\ "CreateIndex").as[Long]
-        modifyIndex     <- (j --\ "ModifyIndex").as[Long]
+        id              <- c.downField("ID").as[String]
+        node            <- c.downField("Node").as[String]
+        address         <- c.downField("Address").as[String]
+        datacenter      <- c.downField("Datacenter").as[String]
+        meta            <- c.downField("Meta").as[Map[String, String]]
+        taggedAddresses <- c.downField("TaggedAddresses").as[TaggedAddresses]
+        createIndex     <- c.downField("CreateIndex").as[Long]
+        modifyIndex     <- c.downField("ModifyIndex").as[Long]
       } yield NodeResponse(
         id,
         node,
@@ -41,11 +41,11 @@ object NodeResponse {
 final case class TaggedAddresses(lan: String, wan: String)
 
 object TaggedAddresses {
-  implicit def TaggedAddressesDecoder: DecodeJson[TaggedAddresses] =
-    DecodeJson(j =>
+  implicit def TaggedAddressesDecoder: Decoder[TaggedAddresses] =
+    Decoder.instance(c =>
       for {
-        lan <- (j --\ "lan").as[String]
-        wan <- (j --\ "wan").as[String]
+        lan <- c.downField("lan").as[String]
+        wan <- c.downField("wan").as[String]
       } yield TaggedAddresses(lan, wan)
     )
 }

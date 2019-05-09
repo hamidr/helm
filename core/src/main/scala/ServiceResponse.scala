@@ -1,6 +1,6 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
 
 /** Case class representing a service as returned from an API call to Consul */
 final case class ServiceResponse(
@@ -15,17 +15,17 @@ final case class ServiceResponse(
 )
 
 object ServiceResponse {
-  implicit def ServiceResponseDecoder: DecodeJson[ServiceResponse] =
-    DecodeJson(j =>
+  implicit def ServiceResponseDecoder: Decoder[ServiceResponse] =
+    Decoder.instance { c =>
       for {
-        id                <- (j --\ "ID").as[String]
-        address           <- (j --\ "Address").as[String]
-        enableTagOverride <- (j --\ "EnableTagOverride").as[Boolean]
-        createIndex       <- (j --\ "CreateIndex").as[Long]
-        modifyIndex       <- (j --\ "ModifyIndex").as[Long]
-        port              <- (j --\ "Port").as[Int]
-        service           <- (j --\ "Service").as[String]
-        tags              <- (j --\ "Tags").as[List[String]]
+        id                <- c.downField("ID").as[String]
+        address           <- c.downField("Address").as[String]
+        enableTagOverride <- c.downField("EnableTagOverride").as[Boolean]
+        createIndex       <- c.downField("CreateIndex").as[Long]
+        modifyIndex       <- c.downField("ModifyIndex").as[Long]
+        port              <- c.downField("Port").as[Int]
+        service           <- c.downField("Service").as[String]
+        tags              <- c.downField("Tags").as[List[String]]
       } yield ServiceResponse(service, id, tags, address, port, enableTagOverride, createIndex, modifyIndex)
-    )
+    }
 }

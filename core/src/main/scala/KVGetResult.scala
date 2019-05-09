@@ -1,6 +1,6 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
 
 /** Case class representing the response to a KV "Read Key" API call to Consul */
 final case class KVGetResult(
@@ -14,16 +14,16 @@ final case class KVGetResult(
 )
 
 object KVGetResult {
-  implicit def KVGetResultDecoder: DecodeJson[KVGetResult] =
-    DecodeJson(j =>
+  implicit def KVGetResultDecoder: Decoder[KVGetResult] =
+    Decoder.instance(c =>
       for {
-        key         <- (j --\ "Key").as[String]
-        value       <- (j --\ "Value").as[Option[String]]
-        flags       <- (j --\ "Flags").as[Long]
-        session     <- (j --\ "Session").as[Option[String]]
-        lockIndex   <- (j --\ "LockIndex").as[Long]
-        createIndex <- (j --\ "CreateIndex").as[Long]
-        modifyIndex <- (j --\ "ModifyIndex").as[Long]
+        key         <- c.downField("Key").as[String]
+        value       <- c.downField("Value").as[Option[String]]
+        flags       <- c.downField("Flags").as[Long]
+        session     <- c.downField("Session").as[Option[String]]
+        lockIndex   <- c.downField("LockIndex").as[Long]
+        createIndex <- c.downField("CreateIndex").as[Long]
+        modifyIndex <- c.downField("ModifyIndex").as[Long]
       } yield KVGetResult(
         key,
         value,

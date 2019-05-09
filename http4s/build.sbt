@@ -9,7 +9,7 @@ scalaCheckVersion := "1.13.4"
 libraryDependencies ++= Seq(
   "io.verizon.journal" %% "core"                            % "3.0.18",
   http4sOrg            %% "http4s-blaze-client"             % http4sVersion,
-  http4sOrg            %% "http4s-argonaut"                 % http4sVersion,
+  http4sOrg            %% "http4s-circe"                    % http4sVersion,
   "com.whisk"          %% "docker-testkit-scalatest"        % dockeritVersion % "test",
   "com.whisk"          %% "docker-testkit-impl-docker-java" % dockeritVersion % "test"
 )

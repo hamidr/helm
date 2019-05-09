@@ -1,6 +1,6 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
 
 sealed abstract class HealthStatus extends Product with Serializable
 
@@ -28,16 +28,16 @@ object HealthStatus {
       case Unknown  => "unknown"
     }
 
-  implicit val HealthStatusDecoder: DecodeJson[HealthStatus] =
-    DecodeJson[HealthStatus] { c =>
+  implicit val HealthStatusDecoder: Decoder[HealthStatus] =
+    Decoder.instance { c =>
       c.as[String].flatMap { s =>
         fromString(s) match {
-          case Some(r) => DecodeResult.ok(r)
-          case None => DecodeResult.fail(s"invalid health status: $s", c.history)
+          case Some(r) => Right(r)
+          case None => Left(DecodingFailure(s"invalid health status: $s", c.history))
         }
       }
     }
 
-  implicit val HealthStatusEncoder: EncodeJson[HealthStatus] =
-    EncodeJson[HealthStatus] { hs => jString(toString(hs)) }
+  implicit val HealthStatusEncoder: Encoder[HealthStatus] =
+    Encoder.encodeString.contramap { hs => toString(hs) }
 }

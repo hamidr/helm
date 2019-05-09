@@ -1,6 +1,6 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
 
 /** Case class representing the response to the Health API's List Nodes For Service function */
 final case class HealthNodesForServiceResponse(
@@ -10,12 +10,12 @@ final case class HealthNodesForServiceResponse(
 )
 
 object HealthNodesForServiceResponse {
-  implicit def HealthNodesForServiceResponseDecoder: DecodeJson[HealthNodesForServiceResponse] =
-    DecodeJson(j =>
+  implicit def HealthNodesForServiceResponseDecoder: Decoder[HealthNodesForServiceResponse] =
+    Decoder.instance(c =>
       for {
-        node    <- (j --\ "Node").as[NodeResponse]
-        service <- (j --\ "Service").as[ServiceResponse]
-        checks  <- (j --\ "Checks").as[List[HealthCheckResponse]]
+        node    <- c.downField("Node").as[NodeResponse]
+        service <- c.downField("Service").as[ServiceResponse]
+        checks  <- c.downField("Checks").as[List[HealthCheckResponse]]
       } yield HealthNodesForServiceResponse(node, service, checks)
     )
 }

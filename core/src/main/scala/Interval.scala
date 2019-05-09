@@ -1,6 +1,6 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
 
 sealed abstract class Interval
 
@@ -30,6 +30,6 @@ object Interval {
     }
   }
 
-  implicit val IntervalEncoder: EncodeJson[Interval] =
-    EncodeJson[Interval] { i => jString(toString(i)) }
+  implicit val IntervalEncoder: Encoder[Interval] =
+    Encoder.encodeString.contramap { i => toString(i) }
 }

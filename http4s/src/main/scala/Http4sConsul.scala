@@ -1,16 +1,14 @@
 package helm
 package http4s
 
-import argonaut.Json
-import argonaut.Json.jEmptyObject
-import argonaut.StringWrap.StringToStringWrap
+import io.circe._, io.circe.syntax._
 import cats.data.NonEmptyList
 import cats.effect.Effect
 import cats.~>
 import cats.implicits._
 import journal.Logger
 import org.http4s._
-import org.http4s.argonaut._
+import org.http4s.circe._
 import org.http4s.client._
 import org.http4s.headers.Authorization
 import org.http4s.Status.Successful
@@ -326,16 +324,16 @@ final class Http4sConsulClient[F[_]](
     check:             Option[HealthCheckParameter],
     checks:            Option[NonEmptyList[HealthCheckParameter]]
   ): F[Unit] = {
-    val json: Json =
-      ("Name"              :=  service)              ->:
-      ("ID"                :=? id)                   ->?:
-      ("Tags"              :=? tags.map(_.toList))   ->?:
-      ("Address"           :=? address)              ->?:
-      ("Port"              :=? port)                 ->?:
-      ("EnableTagOverride" :=? enableTagOverride)    ->?:
-      ("Check"             :=? check)                ->?:
-      ("Checks"            :=? checks.map(_.toList)) ->?:
-      jEmptyObject
+    val json: Json = Json.fromFields(List(
+      ("Name"              , service.asJson)           ,
+      ("ID"                , id.asJson)                 ,
+      ("Tags"              , tags.map(_.toList).asJson) ,
+      ("Address"           , address.asJson)            ,
+      ("Port"              , port.asJson)               ,
+      ("EnableTagOverride" , enableTagOverride.asJson)  ,
+      ("Check"             , check.asJson)              ,
+      ("Checks"            , checks.map(_.toList).asJson)
+    ))
 
     for {
       _ <- F.delay(log.debug(s"registering $service with json: ${json.toString}"))

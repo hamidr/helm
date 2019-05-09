@@ -1,6 +1,7 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
+import io.circe.syntax._
 
 /** Case class representing a health check as defined in the Register Service API calls */
 final case class HealthCheckParameter(
@@ -20,20 +21,22 @@ final case class HealthCheckParameter(
 )
 
 object HealthCheckParameter {
-  implicit def HealthCheckParameterEncoder: EncodeJson[HealthCheckParameter] =
-    EncodeJson((h: HealthCheckParameter) =>
-      ("Name"                           :=  h.name)                           ->:
-      ("CheckID"                        :=? h.id)                             ->?:
-      ("Interval"                       :=? h.interval)                       ->?:
-      ("Notes"                          :=? h.notes)                          ->?:
-      ("DeregisterCriticalServiceAfter" :=? h.deregisterCriticalServiceAfter) ->?:
-      ("ServiceID"                      :=? h.serviceId)                      ->?:
-      ("Status"                         :=? h.initialStatus)                  ->?:
-      ("HTTP"                           :=? h.http)                           ->?:
-      ("TLSSkipVerify"                  :=? h.tlsSkipVerify)                  ->?:
-      ("Script"                         :=? h.script)                         ->?:
-      ("DockerContainerID"              :=? h.dockerContainerId)              ->?:
-      ("TCP"                            :=? h.tcp)                            ->?:
-      ("TTL"                            :=? h.ttl)                            ->?:
-      jEmptyObject)
+  implicit def HealthCheckParameterEncoder: Encoder[HealthCheckParameter] =
+    Encoder.encodeJsonObject.contramapObject { h =>
+      JsonObject(
+        "Name"                           := h.name                           ,
+        "CheckID"                        := h.id                             ,
+        "Interval"                       := h.interval                       ,
+        "Notes"                          := h.notes                          ,
+        "DeregisterCriticalServiceAfter" := h.deregisterCriticalServiceAfter ,
+        "ServiceID"                      := h.serviceId                      ,
+        "Status"                         := h.initialStatus                  ,
+        "HTTP"                           := h.http                           ,
+        "TLSSkipVerify"                  := h.tlsSkipVerify                  ,
+        "Script"                         := h.script                         ,
+        "DockerContainerID"              := h.dockerContainerId              ,
+        "TCP"                            := h.tcp                            ,
+        "TTL"                            := h.ttl
+      )
+    }
 }

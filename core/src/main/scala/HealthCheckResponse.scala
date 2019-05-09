@@ -1,6 +1,6 @@
 package helm
 
-import argonaut._, Argonaut._
+import io.circe._
 
 /** Case class representing a health check as returned from an API call to Consul */
 final case class HealthCheckResponse(
@@ -18,20 +18,20 @@ final case class HealthCheckResponse(
 )
 
 object HealthCheckResponse {
-  implicit def HealthCheckResponseDecoder: DecodeJson[HealthCheckResponse] =
-    DecodeJson(j =>
+  implicit def HealthCheckResponseDecoder: Decoder[HealthCheckResponse] =
+    Decoder.instance(c =>
       for {
-        node        <- (j --\ "Node").as[String]
-        checkId     <- (j --\ "CheckID").as[String]
-        name        <- (j --\ "Name").as[String]
-        status      <- (j --\ "Status").as[HealthStatus]
-        notes       <- (j --\ "Notes").as[String]
-        output      <- (j --\ "Output").as[String]
-        serviceId   <- (j --\ "ServiceID").as[String]
-        serviceName <- (j --\ "ServiceName").as[String]
-        serviceTags <- (j --\ "ServiceTags").as[List[String]]
-        createIndex <- (j --\ "CreateIndex").as[Long]
-        modifyIndex <- (j --\ "ModifyIndex").as[Long]
+        node        <- c.downField("Node").as[String]
+        checkId     <- c.downField("CheckID").as[String]
+        name        <- c.downField("Name").as[String]
+        status      <- c.downField("Status").as[HealthStatus]
+        notes       <- c.downField("Notes").as[String]
+        output      <- c.downField("Output").as[String]
+        serviceId   <- c.downField("ServiceID").as[String]
+        serviceName <- c.downField("ServiceName").as[String]
+        serviceTags <- c.downField("ServiceTags").as[List[String]]
+        createIndex <- c.downField("CreateIndex").as[Long]
+        modifyIndex <- c.downField("ModifyIndex").as[Long]
       } yield HealthCheckResponse(
         node,
         checkId,
