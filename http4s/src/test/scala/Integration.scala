@@ -14,7 +14,8 @@ import org.http4s._
 import org.http4s.client.blaze._
 import org.scalacheck._
 import org.scalatest._
-import org.scalatest.enablers.CheckerAsserting
+import org.scalatestplus.scalacheck.CheckerAsserting
+import org.scalatestplus.scalacheck.Checkers
 import org.scalatest.prop._
 
 // This is how we use docker-kit.  Nothing specific to helm in this trait.
